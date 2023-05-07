@@ -86,6 +86,7 @@ namespace CBTBehaviorsEnhanced
         public const string KickTargetInstabReductionMulti = "CBTBE_Kick_Target_Instability_Reduction_Multi"; // float
 
         // --- PUNCH STATS ---
+        public const string PunchDisabled = "CBTBE_Punch_Disabled";
         public const string PunchAttackMod = "CBTBE_Punch_Attack_Mod"; // int - a straight modifier to the attack roll
         public const string PunchExtraHitsCount = "CBTBE_Punch_Extra_Hits_Count"; // float - a number of extra hits (using the calculated damage of the single strike) that will be applied. Will be rounded down.
 

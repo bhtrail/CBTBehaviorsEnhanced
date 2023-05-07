@@ -1,4 +1,5 @@
 ﻿using CBTBehaviorsEnhanced.Helper;
+using CBTBehaviorsEnhanced.Extensions;
 using CustomComponents;
 using CustomUnits;
 using IRBTModUtils.Extension;
@@ -319,10 +320,12 @@ namespace CBTBehaviorsEnhanced
             if (actor.IsQuadMech()) return false;
 
             // Check for mech
-            if (actor is Mech)
+            if (actor is Mech mech)
             {
                 // Can't punch with damaged shoulders
                 if (!leftShoulderIsFunctional && !rightShoulderIsFunctional) return false;
+
+                if (mech.IsPunchDisabled()) return false;
             }
 
             return true;

@@ -7,6 +7,10 @@ namespace CBTBehaviorsEnhanced.Extensions
 {
     public static class MechExtensions
     {
+        public static bool IsPunchDisabled(this Mech mech)
+        {
+            return mech.StatCollection.GetValue<bool>(ModStats.PunchDisabled);
+        }
 
         public static int ActuatorDamageMalus(this Mech mech)
         {
