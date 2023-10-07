@@ -4,6 +4,7 @@ using CustAmmoCategories;
 using CustomComponents;
 using Localize;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using us.frostraptor.modUtils;
 
@@ -26,7 +27,7 @@ namespace CBTBehaviorsEnhanced.MeleeStates
             Mod.MeleeLog.Info?.Write($"Building PHYSICAL WEAPON state for attacker: {CombatantUtils.Label(state.attacker)} @ attackPos: {state.attackPos} vs. target: {CombatantUtils.Label(state.target)}");
 
             this.Label = Mod.LocalizedText.Labels[ModText.LT_Label_Melee_Type_Physical_Weapon];
-            this.IsValid = ValidateAttack(state.attacker, state.target, state.validAnimations);
+            this.IsValid = ValidateAttack(state.attacker, state.target, state.validAnimations, state.skipValidatePathing);
             if (IsValid)
             {
 
@@ -101,7 +102,7 @@ namespace CBTBehaviorsEnhanced.MeleeStates
             return true;
         }
 
-        private bool ValidateAttack(Mech attacker, AbstractActor target, HashSet<MeleeAttackType> validAnimations)
+        private bool ValidateAttack(Mech attacker, AbstractActor target, HashSet<MeleeAttackType> validAnimations, bool skipValidatePathing)
         {
 
             ActorMeleeCondition meleeCondition = ModState.GetMeleeCondition(attacker);
@@ -132,7 +133,7 @@ namespace CBTBehaviorsEnhanced.MeleeStates
             }
 
             // If distance > walkSpeed, disable kick/physical weapon/punch            
-            if (!state.HasWalkAttackNodes)
+            if (!skipValidatePathing && !state.HasWalkAttackNodes)
             {
                 Mod.MeleeLog.Info?.Write($"No walking nodes found for melee attack!");
                 return false;
@@ -144,11 +145,21 @@ namespace CBTBehaviorsEnhanced.MeleeStates
 
         private void CreateDescriptions(Mech attacker, AbstractActor target)
         {
+            float[] adjTargetDamage = DamageHelper.AdjustDamageByTargetTypeForUI(this.TargetDamageClusters, target, attacker.MeleeWeapon);
+
+            string targetDamageS = adjTargetDamage.Count() > 1 ?
+                $"{adjTargetDamage.Sum()} ({DamageHelper.ClusterDamageStringForUI(adjTargetDamage)})" :
+                adjTargetDamage[0].ToString();
+
+            string targetTable = Mod.LocalizedText.Labels[ModText.LT_Label_Melee_Table_Standard];
+            if (this.AttackerTable == DamageTable.PUNCH)
+                targetTable = Mod.LocalizedText.Labels[ModText.LT_Label_Melee_Table_Punch];
+            if (this.AttackerTable == DamageTable.KICK)
+                targetTable = Mod.LocalizedText.Labels[ModText.LT_Label_Melee_Table_Legs];
 
             string localText = new Text(
                 Mod.LocalizedText.AttackDescriptions[ModText.LT_AtkDesc_Physical_Weapon_Desc],
-                new object[] {
-                })
+                new object[] { targetDamageS, this.TargetInstability, targetTable })
                 .ToString();
 
             this.DescriptionNotes.Add(localText);

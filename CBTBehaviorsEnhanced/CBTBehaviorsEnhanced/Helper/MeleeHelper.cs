@@ -1,4 +1,5 @@
 ﻿using CBTBehaviorsEnhanced.MeleeStates;
+using IRBTModUtils.Extension;
 using System.Collections.Generic;
 using UnityEngine;
 using us.frostraptor.modUtils;
@@ -8,6 +9,7 @@ namespace CBTBehaviorsEnhanced.Helper
 
     public static class DamageHelper
     {
+
         public static void ClusterDamage(float totalDamage, float divisor, out float[] clusteredDamage)
         {
             List<float> clusters = new List<float>();
@@ -26,6 +28,45 @@ namespace CBTBehaviorsEnhanced.Helper
             }
             clusteredDamage = clusters.ToArray();
         }
+
+        public static string ClusterDamageStringForUI(float[] clusterDamage)
+        {
+            if (clusterDamage == null || clusterDamage.Length == 0) return "0";
+            if (clusterDamage.Length == 1) return clusterDamage[0].ToString();
+
+            // Do this fucking complicated bullshit to deal with TT stupidity
+            float remainder = clusterDamage[clusterDamage.Length - 1];
+            float cluster = clusterDamage[clusterDamage.Length - 2];
+            if (cluster == remainder)
+                return $"{cluster}x{clusterDamage.Length}";
+            else
+                return $"{clusterDamage[0]}x{clusterDamage.Length - 1} + {remainder}";
+        }
+        public static float[] AdjustDamageByTargetTypeForUI(float[] damage, AbstractActor target, Weapon meleeWeapon)
+        {
+            if (damage == null || damage.Length == 0) return new float[] { };
+            float[] adjusted = new float[damage.Length];
+
+            float multi = 1f;
+            if (UnitHelper.IsVehicle(target))
+            {
+                multi = meleeWeapon.WeaponCategoryValue.VehicleDamageMultiplier;
+                Mod.UILog.Debug?.Write($"Target: {target.DistinctId()} is a vehicle, using melee damage multipler: {multi}");
+            }
+            else if (target is Turret turret)
+            {
+                multi = meleeWeapon.WeaponCategoryValue.TurretDamageMultiplier;
+                Mod.UILog.Debug?.Write($"Target: {turret.DistinctId()} is a turret, using melee damage multipler: {multi}");
+            }
+
+            for (int i = 0; i < damage.Length; i++)
+            {
+                adjusted[i] = damage[i] * multi;
+            }
+
+            return adjusted;
+        }
+
     }
 
     public static class MeleeHelper

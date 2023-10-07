@@ -1,4 +1,5 @@
 ﻿using Newtonsoft.Json;
+using Steamworks;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -156,10 +157,12 @@ namespace CBTBehaviorsEnhanced
 
             Mod.Log.Info?.Write("=== PILOTING OPTIONS ===");
             Mod.Log.Info?.Write($"  StabilityCheck: {this.Piloting.StabilityCheck}");
-            Mod.Log.Info?.Write($"  DFAReductionMulti: x{this.Piloting.DFAReductionMulti}  FallingDamagePerTenTons: {this.Piloting.FallingDamagePerTenTons}");
+            Mod.Log.Info?.Write($"  DFAReductionMulti: x{this.Piloting.DFAReductionMulti}");
+            Mod.Log.Info?.Write($"  FallDamage =>  DamagePerTon: {this.Piloting.FallDamagePerTon}  DamageReductionMulti: {this.Piloting.FallDamageReductionMulti}  " +
+                $"DamageClusterDivisor: {this.Piloting.FallDamageClusterDivisor}");
             Mod.Log.Info?.Write("");
 
-            Mod.Log.Info?.Write("=== SKILL CHECKS OPTIONS ===");
+        Mod.Log.Info?.Write("=== SKILL CHECKS OPTIONS ===");
             Mod.Log.Info?.Write($"  PilotingSkillMulti: x{this.SkillChecks.ModPerPointOfPiloting}  GutsSkillMulti: {this.SkillChecks.ModPerPointOfGuts}");
 
 
@@ -383,6 +386,9 @@ namespace CBTBehaviorsEnhanced
         public bool MultiplyAttackerSelfDamageByHexesMoved = false;
         // The amount to multiply self-kill damage by
         public float SelfCTKillVirtDamageMulti = -1f;
+
+        // If true, Charge should never be valid for AI
+        public bool ForceAlwaysInvalidForAI = false;
     }
 
     // BT Manual pg.37 
@@ -411,6 +417,10 @@ namespace CBTBehaviorsEnhanced
         public int TargetVehicleEvasionPipsRemoved = 4;
 
         public bool EnableTrooperDFAButSeriouslyGetOnStratOpsAlready = false;
+
+        // If true, DFA should never be valid for AI
+        public bool ForceAlwaysInvalidForAI = false;
+
     }
 
     public class KickMeleeOps
@@ -532,8 +542,9 @@ namespace CBTBehaviorsEnhanced
         public float StabilityCheck = 0.30f;
         public float DFAReductionMulti = 0.05f;
 
-        // How many damage points 
-        public int FallingDamagePerTenTons = 5;
+        public float FallDamagePerTon = 1f;
+        public float FallDamageReductionMulti = 0.05f; // Per normalized bonus; 1 = 0, 2 = 0.05 reduction, 4 = 0.10 reduction, etc
+        public float FallDamageClusterDivisor = 25.0f; // Do no more than clusters of 25 damage
     }
 
     public class SkillCheckOptions

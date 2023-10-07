@@ -29,7 +29,7 @@ namespace CBTBehaviorsEnhanced.MeleeStates
             Mod.MeleeLog.Info?.Write($"Building DFA state for attacker: {CombatantUtils.Label(state.attacker)} @ attackPos: {state.attackPos} vs. target: {CombatantUtils.Label(state.target)}");
 
             this.Label = Mod.LocalizedText.Labels[ModText.LT_Label_Melee_Type_DeathFromAbove];
-            this.IsValid = ValidateAttack(state.attacker, state.target);
+            this.IsValid = ValidateAttack(state.attacker, state.target, state.skipValidatePathing);
             if (IsValid)
             {
                 this.UsePilotingDelta = Mod.Config.Melee.DFA.UsePilotingDelta;
@@ -71,7 +71,7 @@ namespace CBTBehaviorsEnhanced.MeleeStates
             return false;
         }
 
-        private bool ValidateAttack(Mech attacker, AbstractActor target)
+        private bool ValidateAttack(Mech attacker, AbstractActor target, bool skipValidatePathing)
         {
             ActorMeleeCondition meleeCondition = ModState.GetMeleeCondition(attacker);
             if (!meleeCondition.CanDFA())
@@ -80,7 +80,7 @@ namespace CBTBehaviorsEnhanced.MeleeStates
                 return false;
             }
 
-            if (!attacker.CanDFATargetFromPosition(target, attacker.CurrentPosition))
+            if (!skipValidatePathing && !attacker.CanDFATargetFromPosition(target, attacker.CurrentPosition))
             {
                 Mod.MeleeLog.Info?.Write($"Attacker unable to DFA target from their position.");
                 return false;
@@ -99,12 +99,24 @@ namespace CBTBehaviorsEnhanced.MeleeStates
 
         private void CreateDescriptions(Mech attacker, AbstractActor target)
         {
-            int sumAttackerDamage = this.AttackerDamageClusters.Count() > 0 ?
-                (int)Math.Ceiling(this.AttackerDamageClusters.Sum()) : 0;
+            float[] adjAttackerDamage = DamageHelper.AdjustDamageByTargetTypeForUI(this.AttackerDamageClusters, attacker, attacker.MeleeWeapon);
+            float[] adjTargetDamage = DamageHelper.AdjustDamageByTargetTypeForUI(this.TargetDamageClusters, target, attacker.MeleeWeapon);
+
+            string attackerDamageS = adjAttackerDamage.Count() > 1 ?
+                $"{adjAttackerDamage.Sum()} ({DamageHelper.ClusterDamageStringForUI(adjAttackerDamage)})" :
+                adjAttackerDamage[0].ToString();
+            string targetDamageS = adjTargetDamage.Count() > 1 ?
+                $"{adjTargetDamage.Sum()} ({DamageHelper.ClusterDamageStringForUI(adjTargetDamage)})" :
+                adjTargetDamage[0].ToString();
+
+            string targetTable = Mod.LocalizedText.Labels[ModText.LT_Label_Melee_Table_Punch];
+            string attackerTable = Mod.LocalizedText.Labels[ModText.LT_Label_Melee_Table_Legs];
+
             string localText = new Text(
                 Mod.LocalizedText.AttackDescriptions[ModText.LT_AtkDesc_DFA_Desc],
                 new object[] {
-                    sumAttackerDamage, this.AttackerInstability
+                    targetDamageS, this.TargetInstability, targetTable,
+                    attackerDamageS, this.AttackerInstability, attackerTable
                 })
                 .ToString();
 

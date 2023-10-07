@@ -27,7 +27,7 @@ namespace CBTBehaviorsEnhanced.MeleeStates
             Mod.MeleeLog.Info?.Write($"Building CHARGE state for attacker: {CombatantUtils.Label(state.attacker)} @ attackPos: {state.attackPos} vs. target: {CombatantUtils.Label(state.target)}");
 
             this.Label = Mod.LocalizedText.Labels[ModText.LT_Label_Melee_Type_Charge];
-            this.IsValid = ValidateAttack(state.attacker, state.target, state.validAnimations);
+            this.IsValid = ValidateAttack(state.attacker, state.target, state.validAnimations, state.skipValidatePathing);
             if (IsValid)
             {
                 float distance = (state.attacker.CurrentPosition - state.target.CurrentPosition).magnitude;
@@ -75,7 +75,7 @@ namespace CBTBehaviorsEnhanced.MeleeStates
             return false;
         }
 
-        private bool ValidateAttack(Mech attacker, AbstractActor target, HashSet<MeleeAttackType> validAnimations)
+        private bool ValidateAttack(Mech attacker, AbstractActor target, HashSet<MeleeAttackType> validAnimations, bool skipValidatePathing)
         {
             ActorMeleeCondition meleeCondition = ModState.GetMeleeCondition(attacker);
             if (!meleeCondition.CanCharge())
@@ -105,7 +105,7 @@ namespace CBTBehaviorsEnhanced.MeleeStates
             }
 
             // If distance > walkSpeed, disable kick/physical weapon/punch            
-            if (!state.HasSprintAttackNodes)
+            if (!skipValidatePathing && !state.HasSprintAttackNodes)
             {
                 Mod.MeleeLog.Info?.Write($"No sprinting nodes found for melee attack!");
                 return false;
@@ -117,12 +117,23 @@ namespace CBTBehaviorsEnhanced.MeleeStates
 
         private void CreateDescriptions(Mech attacker, AbstractActor target)
         {
-            int sumAttackerDamage = this.AttackerDamageClusters.Count() > 0 ?
-                (int)Math.Ceiling(this.AttackerDamageClusters.Sum()) : 0;
+            float[] adjAttackerDamage = DamageHelper.AdjustDamageByTargetTypeForUI(this.AttackerDamageClusters, attacker, attacker.MeleeWeapon);
+            float[] adjTargetDamage = DamageHelper.AdjustDamageByTargetTypeForUI(this.TargetDamageClusters, target, attacker.MeleeWeapon);
+
+            string attackerDamageS = adjAttackerDamage.Count() > 1 ?
+                $"{adjAttackerDamage.Sum()} ({DamageHelper.ClusterDamageStringForUI(adjAttackerDamage)})" :
+                adjAttackerDamage[0].ToString();
+            string targetDamageS = adjTargetDamage.Count() > 1 ?
+                $"{adjTargetDamage.Sum()} ({DamageHelper.ClusterDamageStringForUI(adjTargetDamage)})" :
+                adjTargetDamage[0].ToString();
+
+            string attackTable = Mod.LocalizedText.Labels[ModText.LT_Label_Melee_Table_Standard];
+            
             string localText = new Text(
                 Mod.LocalizedText.AttackDescriptions[ModText.LT_AtkDesc_Charge_Desc],
                 new object[] {
-                    sumAttackerDamage, this.AttackerInstability
+                    targetDamageS, this.TargetInstability, attackTable, 
+                    attackerDamageS, this.AttackerInstability, attackTable
                 })
                 .ToString();
 
